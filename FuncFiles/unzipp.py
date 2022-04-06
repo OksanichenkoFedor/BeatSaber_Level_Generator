@@ -1,10 +1,11 @@
 import os
+import shutil
 import zipfile
 from FuncFiles.convert import fastConvert
 
 
-def unzip_new():
-    all_z = os.listdir("Zipped")
+def unzip_new(zip_folder = "Zipped", verbose=0):
+    all_z = os.listdir(zip_folder)
     file = open("InfoFiles/unzipped.txt", "r")
     un_z = [row.strip() for row in file]
     file.close()
@@ -20,7 +21,10 @@ def unzip_new():
             if z == all_z[i]:
                 new = False
         if new:
-            no_new = False
+            if all_z[i][-4:] == ".zip":
+                no_new = False
+            else:
+                print("Не архив: "+ all_z[i])
         else:
             i += 1
     if no_new:
@@ -30,8 +34,8 @@ def unzip_new():
     print("Start unzipping " + unzipping)
     # проверяем наличие всего
 
-    files = checking(unzipping)
-
+    files = checking(unzipping, zip_folder)
+    #print("1")
     if files == -1:
         file = open("InfoFiles/badzipped.txt", "a")
         file.write(unzipping + "\n")
@@ -43,21 +47,29 @@ def unzip_new():
     files1 = (egg, norm[0], info)
     #fillPure(files, unzipping)
 
-    res = fillToConvert(files, unzipping)
+    res = fillToConvert(files, unzipping, zip_folder, verbose)
+    #print("2")
     if res:
-        file = open("InfoFiles/unzipped.txt", "a")
+        file = open("InfoFiles/unzipped.txt", "a", encoding="utf-8")
         file.write(unzipping + "\n")
         file.close()
+        path = zip_folder + "/" + unzipping
+        os.remove(path)
     else:
-        file = open("InfoFiles/badzipped.txt", "a")
-        file.write(unzipping + "\n")
+        path = unzipping
+        file = open("InfoFiles/badzipped.txt", "a", encoding="utf-8")
+        file.write(path + "\n")
         file.close()
+        path = zip_folder + "/" + unzipping
+        file_destination = "BadZipped"
+        shutil.move(path, file_destination)
     #print("Unzipped " + unzipping)
+
     return True
 
 
-def checking(unzipping):
-    zf = zipfile.ZipFile("Zipped/" + unzipping)
+def checking(unzipping, zip_folder):
+    zf = zipfile.ZipFile(zip_folder+"/" + unzipping)
     l = zf.infolist()
     egg_uf = True
     egg = ""
@@ -121,9 +133,9 @@ def checking(unzipping):
     return egg, norm, info
 
 
-def fillPure(files, unzipping):
+def fillPure(files, unzipping, zip_folder):
     egg, norm, info = files
-    zf = zipfile.ZipFile("Zipped/" + unzipping)
+    zf = zipfile.ZipFile(zip_folder + "/" + unzipping)
 
     all_p = os.listdir("Converted")
     place = str(len(all_p) + 1)
@@ -139,14 +151,15 @@ def fillPure(files, unzipping):
     os.rename("Converted/" + place + "/" + info, "Converted/" + place + "/info.dat")
 
 
-def fillToConvert(files, unzipping):
+def fillToConvert(files, unzipping, zip_folder, verbose = 0):
     egg, norms, info = files
-    zf = zipfile.ZipFile("Zipped/" + unzipping)
+    zf = zipfile.ZipFile(zip_folder + "/" + unzipping)
     places = []
     for i in range(len(norms)):
         all_p = os.listdir("Converted")
         place = str(len(all_p) + 1)
-        print(place)
+        if verbose==1:
+            print(place)
         os.mkdir("Converted/" + place)
 
         zf.extract(egg, "Converted/" + place)
@@ -158,6 +171,7 @@ def fillToConvert(files, unzipping):
         zf.extract(info, "Converted/" + place)
         os.rename("Converted/" + place + "/" + info, "Converted/" + place + "/info.dat")
         places.append(place)
+    #print(places)
     return fastConvert(places, unzipping, norms)
 
 

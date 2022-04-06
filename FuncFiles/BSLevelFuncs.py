@@ -43,6 +43,7 @@ class BSLevel():
         """
         Make np array filled with every note, with shape (nm of notes, 5)
         """
+        bad_notes = True
         if self.is_filled:
             res = []
             for nt in self.content["notes"]:
@@ -55,8 +56,10 @@ class BSLevel():
                     time = time*qtime
                     correct_note = False
                     if (nt["_type"] > 3) or (nt["_lineIndex"] > 3) or (nt["_lineLayer"] > 2) or (nt["_cutDirection"] > 8):
-                        print("Новая нота (мы её не добавляем)")
-                        print(nt)
+                        if bad_notes:
+                            print("Новая нота (мы её не добавляем)")
+                            print(nt)
+                            bad_notes = False
                     else:
                         res.append([time, int(nt["_type"]), int(nt["_lineIndex"]), int(nt["_lineLayer"]),
                                 int(nt["_cutDirection"])])
