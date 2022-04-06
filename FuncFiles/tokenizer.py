@@ -564,12 +564,13 @@ class MultigrammTokenizer:
         else:
             return np.array(res_mass)
 
-    def sorted_devoc(self, num_print=-1):
+    def sorted_devoc(self, num_print=-1, verbose = False):
         """
 
         Print sorted self.devoc
 
         :param num_print: Number of most frequently occurring gramms, that will be output
+        :param verbose: If true, will print up part of sorted devoc
 
         :return: Sorted self.devoc
 
@@ -581,7 +582,8 @@ class MultigrammTokenizer:
             d1.append([self.devoc[key]["num"], key, self.devoc[key]["gramm"]])
         d1 = sorted(d1, reverse=True)
         for i in range(min(len(d1), num_print)):
-            print("token: " + str(d1[i][1]) + " num: " + str(d1[i][0]) + " gramm: " + str(d1[i][2]))
+            if verbose:
+                print("token: " + str(d1[i][1]) + " num: " + str(d1[i][0]) + " gramm: " + str(d1[i][2]))
         return d1
 
     def save(self, foldername):

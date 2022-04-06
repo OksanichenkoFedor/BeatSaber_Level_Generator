@@ -121,4 +121,4 @@ class LangTokenizer:
 
         """
         mass = self.tokenizer.sorted_devoc(num_print=num_print)
-        self.converter.print_top(mass)
+        self.converter.print_top(mass, num_print = num_print)

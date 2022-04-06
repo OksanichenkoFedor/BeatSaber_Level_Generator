@@ -77,17 +77,20 @@ class LangConverter():
         curr_text = "".join(curr_text)
         return curr_text
 
-    def print_top(self, print_mass):
+    def print_top(self, print_mass, num_print=-1):
         """
 
         Prints gramms converted to text
 
         :param print_mass: Massive of top gramms (in integers)
+        :param num_print: Number of most frequently occurring gramms, that will be output
 
         :return: Nothing
 
         """
-        for i in range(len(print_mass)):
+        if num_print==-1:
+            num_print = len(print_mass)
+        for i in range(num_print):
             if print_mass[i][2] != [-1]:
                 print("num: " + "%6d" % print_mass[i][0] + " gramm:  " +
                     self.deconvert(print_mass[i][2]))
