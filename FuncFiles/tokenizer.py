@@ -1,13 +1,53 @@
 import numpy as np
 from tqdm.autonotebook import tqdm
-#import pickle5 as pickle
+# import pickle5 as pickle
 import pickle
 import random
-from FuncFiles.rus_converter import RusConverter
+from FuncFiles.lang_converter import LangConverter
 
 
 class MultigrammTokenizer:
+    """
+    This class is made to tokenize sequence of numbers
+
+    field vocab: array with information about every gramm, every element identified with some number and
+                 contains dictionary with current number ("num"); current token ("token"); boolean, which tells
+                 is this gramm is in vocabulary. Also it conatins new vocab ("vocab"), which contains information
+                 about gramms, which are starts with currecnt gramm
+    field devoc: is dictionary, which matches gramms with token, to decode tokenised message
+    field last_token: Current last added token
+    field vocab_size: Current size of vocab
+    field gramms: Array with all gramms
+    field start_token: Token, which is added to the start of every message
+    field end_token: Token, which is added to the start of every message
+    field start_num: Contains length of start vocabulary (we need it when we do rebolance)
+
+    method init: Just initalise
+    method make_start_vocab: Make start vocab, gramms, devoc
+    method giveNT: Give new token
+    method adopt: Change vocabulary according to corpus of sequences, using some rules of evolution
+    method count_start: Count frequences of every gramm in corpus of sequences
+    method adopt_onse: Change vocabulary according to corpus of sequences
+    method rebalance: Rebalanse tokeniser, after new tokens were added
+    method makeNGW: Make cortege-array of new grams with their frequencies
+    method adopt_NG: Add new gramm to self.vocab (with num)\
+    method count_freq: Count freq of current gramm
+    method tokenize: Tokenize corpus of sequences
+    method correct_add: Tokenize and add new element of current sequence to tokenized massive
+    method detokenize: Detokenize one sequence
+    method sorted_devoc: Print sorted self.devoc
+    method save: Save current tokenizer to folder (it must exist)
+    method load: Load tokenizer from folder
+
+
+    """
+
     def __init__(self, num=444):
+        """
+
+        :param num: Length of vocabulary (max number in sequence - 1)
+
+        """
         self.vocab = {}
         self.devoc = {}
         self.last_token = 2
@@ -20,6 +60,15 @@ class MultigrammTokenizer:
         self.start_num = num
 
     def make_start_vocab(self, num):
+        """
+
+        Make start vocab, gramms, devoc
+
+        :param num: Length of vocabulary (max number in sequence - 1)
+
+        :return: Nothing
+
+        """
         self.start_voc.append(-1)
         self.gramms.append([-1])
         curr_vok = {"num": 0, "token": self.giveNT(), "vocab": {}, "empty": False}
@@ -33,25 +82,35 @@ class MultigrammTokenizer:
             self.vocab[i] = curr_vok
 
     def giveNT(self):
+        """
+
+        Give new token
+
+        :return: new token (int)
+
+        """
         self.last_token += 1
         self.vocab_size += 1
         return self.last_token
 
     def adopt(self, texts, vocab_size=2000, ad_num=False, num_cycles=10, part_add=0.25,
-              show_main=False, show_NGW=True, min_len=0):
+              verbose_main=False, verbose_NGW=True, min_len=0):
         """
 
+        Change vocabulary according to corpus of sequences, using some rules of evolution
 
-        :param min_len:
-        :param show_NGW:
-        :param show_main:
-        :param part_add:
-        :param texts: Corpus of texts, on which we will make tokenizer
+        :param min_len: Minimum length of gramms in vocabulary
+        :param verbose_NGW: If true, there will appear tqdm progress bar in every "adopt_once", if false - no
+        :param verbose_main: If true, there will appear tqdm progress bar in main loop, if false - no
+        :param part_add: Part of new gramms, which must be added in every "adopt_onse"
+        :param texts: Corpus of sequences, on which we will make tokenizer
         :param vocab_size: Aim of vocab size
         :param ad_num: Boolean, if True, then adding new "words" will be repeated exact number of times (num)
                                 if False, then adding will continue, while vocab is not filled
         :param num_cycles: Number of adding cycles
+
         :return: Nothing
+
         """
         # str_texts = []
         # for text in texts:
@@ -59,23 +118,32 @@ class MultigrammTokenizer:
         #    curr_text = ",".join(list(curr_text.astype(str)))
         #    str_texts.append(curr_text)
         # self.count_start(texts)
-        if show_main:
+        if verbose_main:
 
             if ad_num:
                 for i in tqdm(range(num_cycles)):
-                    self.adopt_onse(texts, part_add, show=show_NGW, min_len=min_len)
+                    self.adopt_onse(texts, part_add, verbose=verbose_NGW, min_len=min_len)
             else:
                 while self.vocab_size < vocab_size:
-                    self.adopt_onse(texts, part_add, show=show_NGW, min_len=min_len)
+                    self.adopt_onse(texts, part_add, verbose=verbose_NGW, min_len=min_len)
         else:
             if ad_num:
                 for i in range(num_cycles):
-                    self.adopt_onse(texts, part_add, show=show_NGW, min_len=min_len)
+                    self.adopt_onse(texts, part_add, verbose=verbose_NGW, min_len=min_len)
             else:
                 while self.vocab_size < vocab_size:
-                    self.adopt_onse(texts, part_add, show=show_NGW, min_len=min_len)
+                    self.adopt_onse(texts, part_add, verbose=verbose_NGW, min_len=min_len)
 
     def count_start(self, texts):
+        """
+
+        Count frequencies of every gramm in corpus of sequences
+
+        :param texts: Corpus of sequences
+
+        :return: Nothing
+
+        """
         keys = self.vocab.keys()
         for key in keys:
             self.vocab[key]["num"] = 0
@@ -86,8 +154,20 @@ class MultigrammTokenizer:
                 token = self.vocab[unique[i]]["token"]
                 self.devoc[token]["num"] += counts[i]
 
-    def adopt_onse(self, texts, part_add=0.25, show=True, min_len=0):
-        NG = self.makeNGW(texts, show)
+    def adopt_onse(self, texts, part_add=0.25, verbose=True, min_len=0):
+        """
+
+        Change vocabulary according to corpus of sequences
+
+        :param texts: Corpus of sequences, on which we will make tokenizer
+        :param part_add: Part of new gramms, which must be added
+        :param verbose: If true, there will appear tqdm progress bar, if false - no
+        :param min_len: Minimum length of gramms in vocabulary (use in rebolance)
+
+        :return: Nothing
+
+        """
+        NG = self.makeNGW(texts, verbose)
         i = 0
         start_len = self.vocab_size
         while (i < int(start_len * part_add)) and (i < len(NG)):
@@ -102,6 +182,15 @@ class MultigrammTokenizer:
         self.rebalance(border=min_len)
 
     def rebalance(self, border=0):
+        """
+
+        Rebalanse tokeniser, after new tokens were added
+
+        :param border: Minimum length of gramms in vocabulary (another except of quants will be deleted)
+
+        :return: Nothing
+
+        """
         old_devoc = self.devoc.copy()
         old_voc_size = self.vocab_size
         self.vocab = {}
@@ -125,13 +214,19 @@ class MultigrammTokenizer:
 
             ind += 1
 
-    def makeNGW(self, texts, show):
-        """
-        Make cortege-array of new grams with their freq
+    def makeNGW(self, texts, verbose):
         """
 
+        Make cortege-array of new grams with their frequencies
 
-        if show:
+        :param texts: Corpus of sequences, on which we adopted tokenizer
+        :param verbose: If true, there will appear tqdm progress bar, if false - no
+
+        :return: Sorted array of new gramms, which are possible to add with their frequencies
+
+        """
+
+        if verbose:
             print("---")
             tokened = []
             for i in tqdm(range(len(texts))):
@@ -224,11 +319,16 @@ class MultigrammTokenizer:
         #            ngrams.append((curr_num, curr_gramm))
         # ngrams = sorted(ngrams, reverse=True)
 
-
-
     def adopt_NG(self, gramm, num):
         """
+
         Add new gramm to self.vocab (with num)
+
+        :param gramm: Current gramm
+        :param num: The number of times this gramm has been encountered in the corpus
+
+        :return: Nothing
+
         """
 
         curr_path = self.vocab
@@ -267,7 +367,14 @@ class MultigrammTokenizer:
 
     def count_freq(self, gramm, str_texts):
         """
-        Count freq of current ngramm
+
+        Count frequencies of current gramm
+
+        :param gramm: Current gramm
+        :param str_texts: Corpus of sequences
+
+        :return: The number of times this gramm has been encountered in the corpus
+
         """
         num = 0
         curr_gramm = gramm.copy()
@@ -278,6 +385,19 @@ class MultigrammTokenizer:
         return num
 
     def tokenize(self, text, make_drop=False, prob=0.001):
+        """
+
+        Tokenize corpus of sequences
+
+        :param text: Corpus of sequences, that we want to tokenize
+        :param make_drop: If true, than piece of the sequence can be encoded by the
+                     simplest elements - quants with some probability ("prob")
+        :param prob: The probability that a given piece of the sequence will be encoded by the
+                     simplest elements - quants
+
+        :return: Array with tokenized sequences
+
+        """
         ind = 0
         res_mass = [self.start_token]
         if len(text) > 0:
@@ -398,6 +518,18 @@ class MultigrammTokenizer:
         return res_mass
 
     def correct_add(self, curr_mass, new_token, make_drop, prob):
+        """
+
+        Tokenize and add new element of current sequence to tokenized massive
+
+        :param curr_mass: Massive with already tokenized elements
+        :param new_token: New token which will be tokenized
+        :param make_drop: If true, than this piece of the sequence can be encoded by the
+                     simplest elements - quants with some probability ("prob")
+        :param prob: The probability that a this piece of the sequence will be encoded by the
+                     simplest elements - quants
+        :return: Modified curr_mass
+        """
         if make_drop:
             curr_prob = random.random()
             if curr_prob < prob:
@@ -413,6 +545,16 @@ class MultigrammTokenizer:
             return curr_mass.copy()
 
     def detokenize(self, text, string=False):
+        """
+
+        Detokenize one sequence
+
+        :param text: Tokenized sequence, that we want to detokenize
+        :param string: If true than will return string detokenized sequence, if false - than array
+
+        :return: Detokenized sequence
+
+        """
         res_mass = []
         text = text[1:-1]
         for i in range(len(text)):
@@ -423,6 +565,15 @@ class MultigrammTokenizer:
             return np.array(res_mass)
 
     def sorted_devoc(self, num_print=-1):
+        """
+
+        Print sorted self.devoc
+
+        :param num_print: Number of most frequently occurring gramms, that will be output
+
+        :return: Sorted self.devoc
+
+        """
         d1 = []
         if num_print == -1:
             num_print = len(self.devoc)
@@ -434,6 +585,15 @@ class MultigrammTokenizer:
         return d1
 
     def save(self, foldername):
+        """
+
+        Save current tokenizer to folder (it must exist)
+
+        :param foldername: Name of folder, where we will save tokenizer
+
+        :return: Nothing
+
+        """
 
         with open(foldername + '/vocab.pickle', 'wb') as handle:
             pickle.dump(self.vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -454,6 +614,15 @@ class MultigrammTokenizer:
             pickle.dump(self.gramms, fp)
 
     def load(self, foldername):
+        """
+
+        Load tokenizer from folder
+
+        :param foldername: Name of folder from where we will load tokenizer
+
+        :return: Nothing
+
+        """
         with open(foldername + '/vocab.pickle', 'rb') as handle:
             self.vocab = pickle.load(handle)
 
@@ -472,46 +641,4 @@ class MultigrammTokenizer:
             self.gramms = pickle.load(fp)
 
 
-
-class LangTokenizer:
-    def __init__(self, vocab=None):
-        if vocab is None:
-            vocab = set([])
-        if type(vocab)!=type(set([])):
-            print("Словарь не сет")
-
-        self.converter = RusConverter()
-        self.converter.adopt(vocab)
-        self.tokenizer = MultigrammTokenizer(num=(self.converter.last_ind+1))
-
-    def adopt(self, texts, vocab_size=2000, ad_num=False, num_cycles=10, part_add=0.25,
-              show_main=False, show_NGW=True):
-        ind_texts = []
-        for curr_str in texts:
-            ind_texts.append(self.converter.convert(curr_str))
-
-        self.tokenizer.adopt(ind_texts, vocab_size=vocab_size, ad_num=ad_num, num_cycles=num_cycles, part_add=part_add,
-              show_main=show_main, show_NGW=show_NGW)
-
-    def tokenize(self, text, make_drop=False, prob=0.001):
-        ind_text = self.converter.convert(text)
-        return self.tokenizer.tokenize(ind_text, make_drop=make_drop, prob=prob)
-
-    def detokenize(self, text):
-        ind_text = self.tokenizer.detokenize(text)
-        return self.converter.deconvert(ind_text)
-
-    def save(self, foldername):
-        self.converter.save(foldername)
-        self.tokenizer.save(foldername)
-
-    def load(self, foldername):
-        self.converter.load(foldername)
-
-        self.tokenizer = MultigrammTokenizer(num=(self.converter.last_ind+1))
-        self.tokenizer.load(foldername)
-
-    def print_top(self, num_print = -1):
-        mass = self.tokenizer.sorted_devoc(num_print=num_print)
-        self.converter.print_top(mass)
 

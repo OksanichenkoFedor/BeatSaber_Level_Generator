@@ -1,7 +1,25 @@
 #import pickle5 as pickle
 import pickle
 
-class RusConverter():
+class LangConverter():
+    """
+
+    This class is made to convert texts to integer sequences (pipeline to MultigrammTokenizer)
+
+    field totok: Dictionary which matches symbols with numbers
+    field detok: Dictionary which matches numbers with symbols
+    field last_ind: Current size of vocab
+
+    method init: Just initalise
+    method adopt: Make totok and detok, using set of letters
+    method convert: Convert text with symbols to sequence
+    method deconvert: Deconvert sequence to text
+    method print_top: Prints gramms converted to text
+    method save:
+    method load:
+
+
+    """
     def __init__(self):
         self.totok = {}
         self.detok = {}
@@ -9,9 +27,13 @@ class RusConverter():
 
     def adopt(self, vocab_set):
         """
-        Make totok and detok, using set of letters.
+
+        Make totok and detok, using set of letters
+
         :param vocab_set: set of letters
-        :return: None
+
+        :return: Nothing
+
         """
         mass = vocab_set.copy()
         mass = list(mass)
@@ -21,6 +43,15 @@ class RusConverter():
             self.last_ind += 1
 
     def convert(self, text):
+        """
+
+        Convert text with symbols to sequence
+
+        :param text: Text, to be converted to sequence
+
+        :return: Converted sequence
+
+        """
         curr_text = text
         curr_text = list(curr_text)
         curr_mass = []
@@ -30,6 +61,15 @@ class RusConverter():
         return curr_mass
 
     def deconvert(self, mass):
+        """
+
+        Deconvert sequence to text
+
+        :param mass: Sequence, to be deconverted to text
+
+        :return: Deconverted text
+
+        """
         curr_mass = mass.copy()
         curr_text = []
         for i in range(len(curr_mass)):
@@ -38,12 +78,30 @@ class RusConverter():
         return curr_text
 
     def print_top(self, print_mass):
+        """
+
+        Prints gramms converted to text
+
+        :param print_mass: Massive of top gramms (in integers)
+
+        :return: Nothing
+
+        """
         for i in range(len(print_mass)):
             if print_mass[i][2] != [-1]:
                 print("num: " + "%6d" % print_mass[i][0] + " gramm:  " +
                     self.deconvert(print_mass[i][2]))
 
     def save(self, foldername):
+        """
+
+        Save current converter to folder (it must exist)
+
+        :param foldername: Name of folder, where we will save converter
+
+        :return: Nothing
+
+        """
 
         with open(foldername + '/totok.pickle', 'wb') as handle:
             pickle.dump(self.totok, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -56,6 +114,15 @@ class RusConverter():
         file.close()
 
     def load(self, foldername):
+        """
+
+        Load tokenizer from folder
+
+        :param foldername: Name of folder from where we will load converter
+
+        :return: Nothing
+
+        """
         with open(foldername + '/totok.pickle', 'rb') as handle:
             self.totok = pickle.load(handle)
 
