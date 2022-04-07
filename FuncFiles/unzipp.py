@@ -2,9 +2,10 @@ import os
 import shutil
 import zipfile
 from FuncFiles.convert import fastConvert
+import FuncFiles.config as config
 
 
-def unzip_new(zip_folder = "Zipped", verbose=0):
+def find_new_to_unzip(zip_folder):
     all_z = os.listdir(zip_folder)
     file = open("InfoFiles/unzipped.txt", "r")
     un_z = [row.strip() for row in file]
@@ -24,18 +25,34 @@ def unzip_new(zip_folder = "Zipped", verbose=0):
             if all_z[i][-4:] == ".zip":
                 no_new = False
             else:
-                print("Не архив: "+ all_z[i])
+                print("Не архив: " + all_z[i])
         else:
             i += 1
     if no_new:
         print("No more to unzip")
         return False
     unzipping = all_z[i]
+    return unzipping
+
+def unzip_new(zip_folder = "Zipped", verbose=0, frame = None):
+
+    unzipping = find_new_to_unzip(zip_folder)
+    if unzipping==False:
+        return False
+
+    #frame.curr_act_lbl["text"] = "Unzipping"
+    #config.conv_logs["current operation"] = "Unzipping"
+
+    frame.song_name_lbl["text"] = unzipping
+    config.conv_logs["song name"] = unzipping
+
     print("Start unzipping " + unzipping)
     # проверяем наличие всего
 
+    frame.curr_act_lbl["text"] = "Checking before unzip"
+    config.conv_logs["current operation"] = "Checking before unzip"
+
     files = checking(unzipping, zip_folder)
-    #print("1")
     if files == -1:
         file = open("InfoFiles/badzipped.txt", "a")
         file.write(unzipping + "\n")
@@ -44,11 +61,12 @@ def unzip_new(zip_folder = "Zipped", verbose=0):
     egg = files[0]
     norm = files[1]
     info = files[2]
-    files1 = (egg, norm[0], info)
-    #fillPure(files, unzipping)
 
-    res = fillToConvert(files, unzipping, zip_folder, verbose)
-    #print("2")
+    frame.curr_act_lbl["text"] = "Unzipping"
+    config.conv_logs["current operation"] = "Unzipping"
+
+    res = fillToConvert(files, unzipping, zip_folder, verbose, frame=frame)
+
     if res:
         file = open("InfoFiles/unzipped.txt", "a", encoding="utf-8")
         file.write(unzipping + "\n")
@@ -63,6 +81,8 @@ def unzip_new(zip_folder = "Zipped", verbose=0):
         path = zip_folder + "/" + unzipping
         file_destination = "BadZipped"
         shutil.move(path, file_destination)
+        config.bad_zipped+=1
+        frame.bad_lbl["text"] = "Количество плохих песен: "+str(config.bad_zipped)
     #print("Unzipped " + unzipping)
 
     return True
@@ -151,7 +171,8 @@ def fillPure(files, unzipping, zip_folder):
     os.rename("Converted/" + place + "/" + info, "Converted/" + place + "/info.dat")
 
 
-def fillToConvert(files, unzipping, zip_folder, verbose = 0):
+def fillToConvert(files, unzipping, zip_folder, verbose = 0, frame = None):
+
     egg, norms, info = files
     zf = zipfile.ZipFile(zip_folder + "/" + unzipping)
     places = []
@@ -171,8 +192,11 @@ def fillToConvert(files, unzipping, zip_folder, verbose = 0):
         zf.extract(info, "Converted/" + place)
         os.rename("Converted/" + place + "/" + info, "Converted/" + place + "/info.dat")
         places.append(place)
-    #print(places)
-    return fastConvert(places, unzipping, norms)
+
+    frame.curr_act_lbl["text"] = "Converting"
+    config.conv_logs["current operation"] = "Converting"
+
+    return fastConvert(places, unzipping, norms, frame=frame)
 
 
 def unzip_all():

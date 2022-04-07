@@ -4,6 +4,7 @@ import librosa
 from tensorflow import abs, signal
 import shutil
 import json
+import FuncFiles.config as config
 
 def convert_new():
     all_p = os.listdir("Pure")
@@ -106,7 +107,7 @@ def fillConverted(converting, save = True):
 
 
 
-def fastConvert(converting, unzipping, curr_file, save = True):
+def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
 
 
 
@@ -146,6 +147,9 @@ def fastConvert(converting, unzipping, curr_file, save = True):
             shutil.rmtree("Converted/" + converting[i])
         return False
     else:
+        frame.curr_act_lbl["text"] = "Furie transformation"
+        config.conv_logs["current operation"] = "Furie transformation"
+        config.conv_logs["beat"] = int(beat)
         unfound_corr_level = True
         #print("2.3")
         #print(egg_path)
