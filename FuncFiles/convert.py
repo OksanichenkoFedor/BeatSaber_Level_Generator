@@ -5,6 +5,7 @@ from tensorflow import abs, signal
 import shutil
 import json
 import FuncFiles.config as config
+from FuncFiles.support_funcs import fprint
 
 def convert_new():
     all_p = os.listdir("Pure")
@@ -109,23 +110,23 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
 
     bad_info = True
     beat = 1
+    fprint("Try to open info file: " + info_path)
     try:
         file = open(info_path, 'r')
         dic = file.read()
         dic = json.loads(dic)
-        #dic.replace('\n', ' ')
-        #dic.replace('false', 'False')
-        #dic.replace('true', 'True')
-        #info = eval(dic)
         info = dic
         beat = info["_beatsPerMinute"]
         file.close()
+        fprint("Success!")
+        fprint("Beats Per Minute: " + str(beat))
         bad_info = False
     except Exception as e:
+        fprint("Failure")
+        fprint("Error: " + str(e))
         print(e)
         file.close()
         bad_info = True
-    #print("2.2")
     mult = 100
     min_sr = 6000 # минимальное количество элементов в 1 бит
     max_sr = 600000 # минимальное количество элементов в 1 бит
@@ -133,33 +134,37 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
     if (int(beat) < (min_sr/mult)) or bad_info or (int(beat) > (max_sr/mult)):
         if bad_info:
             print("Проблемы с считыванием info.dat: " + unzipping)
+            fprint("Problems with reading info.dat: " + unzipping)
         else:
             print("Слишком короткий или слишком длинный бит (" + str(int(beat)) + ")" + " Файл: " + unzipping)
+            fprint("Too long or short beat (" + str(int(beat)) + ")" + " File: " + unzipping)
         for i in range(len(converting)):
+            fprint("Deleting converting place: " + str(converting[i]))
             shutil.rmtree("../Data/Converted/" + converting[i])
         return False
     else:
         frame.curr_act_lbl["text"] = "Furie transformation"
         config.conv_logs["current operation"] = "Furie transformation"
         config.conv_logs["beat"] = int(beat)
+        fprint("Start reading in librosa: " + str(egg_path))
         unfound_corr_level = True
-        #print("2.3")
-        #print(egg_path)
-        #print(int(beat * mult))
         try:
             y, sr = librosa.load(egg_path, sr=int(beat * mult))
         except Exception as e:
+            fprint("Error: " + str(e))
             print(e)
             return False
-        #print("2.3")
-        # 60 / 24 - 2.5 за бит делаем 48 ударов
+        fprint("Start furie transformation: " + str(egg_path))
+        fprint("Sampling rate: " + str(sr))
+        fprint("Song shape: " + str(y.shape))
         furie = abs(signal.stft(y, frame_length=int(2.5 * mult), frame_step=int(2.5 * mult), pad_end=True))
-        #print("2.3")
+        fprint("Start furie transformation: " + str(egg_path))
         np_song = furie.numpy()
         start_shape = np_song.shape
         np_song = np_song + 0.000001*np.random.uniform(low=-1, high=1, size=start_shape)
         if start_shape!=np_song.shape:
             print("Шумы плохо добавляются в песню")
+            fprint("Problem with adding noise")
         for i in range(len(converting)):
             norm_path = "../Data/Converted/" + converting[i] + "/Level.dat"
             egg_fpath = "../Data/Converted/" + converting[i] + "/song"
@@ -175,6 +180,7 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
 
 
             if correct_level:
+                fprint("Start loading into BSlevel")
                 try:
                     l_curr.readFromFile(norm_path, is_beat=True, beat=beat)
                     cat_level = l_curr.getCatNotesVer3(proportion=(1.0 / 12.0), is_beat=True, beat=beat)
@@ -183,18 +189,21 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
                     text_level = l_curr.getTextNotes(proportion=(1.0 / 12.0), is_beat=True, beat=beat)
                     correct_level = l_curr.checkFile(norm_path)
                     unfound_corr_level = False
-                except:
+                    fprint("Success")
+                except Exception as e:
+                    fprint("Error in file (" + str(unzipping) + "): " + str(e))
                     print("Ошибка в уровне(нет нот или они странные) из: " + unzipping)
                     print("Уровень: " + curr_file[i])
                     print("---")
                     correct_level = False
             else:
+                fprint("Incorrect level:" + str(unzipping))
                 print("Ошибка в уровне(нет нот) из: " + unzipping)
                 print("Уровень: "+curr_file[i])
                 print("---")
 
             if save and correct_level:
-
+                fprint("Add support information")
                 file = open(beat_fpath, "w")
                 num_beats = int(np_song.shape[0]/24.0)
                 file.write(str(60.0 / beat)+" "+str(num_beats))
@@ -209,6 +218,7 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
                 file.write(text_level)
                 file.close()
             if save:
+                fprint("Remove temp files")
                 os.remove(norm_path)
                 os.remove(egg_path)
                 os.remove(info_path)
@@ -218,7 +228,7 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
                 shutil.rmtree("../Data/Converted/" + converting[i])
             return False
         else:
-            return True#new_level, np_song, text_level#, text_level_1) ,(l_curr, l_curr_1), (cat_level, cat_level_1)
+            return True
 
 
 def convert_all():

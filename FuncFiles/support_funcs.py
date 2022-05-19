@@ -29,3 +29,12 @@ def put_corr_time(frame, type):
 
     frame.ftime_lbl["text"] = "Полное время: " + curr_str
     frame.ltime_lbl["text"] = "Последнее время: " + str(round(delta_time, 1)) + " сек"
+
+
+def fprint(message, type="to file", filename="../logs/full_log.txt"):
+    if type=="to file":
+        file = open(filename,"a")
+        file.write(message+"\n")
+        file.close()
+    else:
+        pass

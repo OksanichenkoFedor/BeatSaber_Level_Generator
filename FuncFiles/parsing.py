@@ -7,6 +7,7 @@ import re
 import wget
 from tqdm.autonotebook import tqdm
 import FuncFiles.config as config
+from FuncFiles.support_funcs import fprint
 from FuncFiles.support_funcs import put_corr_time
 
 
@@ -17,8 +18,10 @@ def parse_page(num, verbose=0):
     url = "https://bsaber.com/songs/page/" + str(num) + "/"
     try:
         response = requests.get(url)
+
     except:
-        print("Данная страница не существует")
+        fprint("Данная страница не существует: " + url)
+        print("Данная страница не существует: " + url)
         return 0
     soup = BeautifulSoup(response.text, 'lxml')
 
@@ -29,12 +32,8 @@ def parse_page(num, verbose=0):
             if '-download-zip' in txt['class']:
                 urls.append(txt['href'])
 
-    if verbose == 1:
-        ans = "Страница номер " + str(num) + " обработана. Найдено " + str(len(urls)) + " песен"
-        print(ans)
-    else:
-        if len(urls) != 20:
-            print("Ахтунг!!!")
+    ans = "Страница номер " + str(num) + " обработана. Найдено " + str(len(urls)) + " песен"
+    fprint(ans)
     return urls
 
     # print(mydivs)
@@ -84,55 +83,40 @@ def download_page(num, verbose, add_frame=False, frame=None):
 
 
 
-def single_download(url, verbose, add_frame=False, frame=None, i=0, length=0):
-    if verbose==1:
-        if not ((url in config.downloaded) or (url in config.bad_dl)):
-            try:
-                wget.download(url, 'Downloads')
-                file = open("../Data/InfoFiles/downloaded.txt", "a")
-                file.write(url + "\n")
-                file.close()
-                config.downloaded.append(url)
-                return True
-            except:
-                print()
-                print("Проблема с " + url)
-                file = open("../Data/InfoFiles/bad_dl.txt", "a")
-                file.write(url + "\n")
-                file.close()
-                config.bad_dl.append(url)
-                return False
-        else:
-            return "already_done"
+def single_download(url, frame, logger, i=0, length=0):
+    if not ((url in config.downloaded) or (url in config.bad_dl)):
+
+        frame.info_down_lbl["text"] = str(i + 1) + " из " + str(length)
+        fprint("Try to download: " + url)
+        try:
+            config.dl_logs["current operation"] = "Скачивание: " + str(url)
+            frame.curr_act_lbl["text"] = "Скачивание: " + str(url)
+            wget.download(url, '../Data/Downloads')
+            file = open("../Data/InfoFiles/downloaded.txt", "a")
+            file.write(url + "\n")
+            file.close()
+            logger.info["downloaded"]["good"]["num"]+=1
+            logger.info["downloaded"]["good"]["arr"].append(url)
+            config.downloaded.append(url)
+            fprint("Correct download: " + url)
+            return True
+        except Exception as e:
+            print()
+            print(e)
+            print("Проблема с " + url)
+            fprint("Fail in downloading: " + url)
+            fprint("Error: " + str(e))
+            # print(os.listdir("../Data/InfoFiles/"))
+            file = open("../Data/InfoFiles/bad_dl.txt", "a")
+            file.write(url + "\n")
+            file.close()
+            logger.info["downloaded"]["bad"]["num"] += 1
+            logger.info["downloaded"]["bad"]["arr"].append(url)
+            config.bad_dl.append(url)
+            config.bad_downloaded += 1
+            frame.bad_d_lbl["text"] = "Количество плохих загрузок: " + str(config.bad_downloaded)
+            return False
     else:
-        if not ((url in config.downloaded) or (url in config.bad_dl)):
-            if add_frame:
-                frame.info_down_lbl["text"] = str(i + 1) + " из " + str(length)
-            try:
-                if add_frame:
-                    config.dl_logs["current operation"] = "Скачивание: " + str(url)
-                    frame.curr_act_lbl["text"] = "Скачивание: " + str(url)
-                wget.download(url, '../Data/Downloads')
-                file = open("../Data/InfoFiles/downloaded.txt", "a")
-                file.write(url + "\n")
-                file.close()
-                config.downloaded.append(url)
-                if add_frame:
-                    pass
-                    #put_corr_time(frame, "download")
-                return True
-            except Exception as e:
-                print()
-                print(e)
-                print("Проблема с " + url)
-                #print(os.listdir("../Data/InfoFiles/"))
-                file = open("../Data/InfoFiles/bad_dl.txt", "a")
-                file.write(url + "\n")
-                file.close()
-                config.bad_dl.append(url)
-                if add_frame:
-                    config.bad_downloaded += 1
-                    frame.bad_d_lbl["text"] = "Количество плохих загрузок: " + str(config.bad_downloaded)
-                return False
-        else:
-            return "already_done"
+        fprint(url+" is already done")
+        return "already_done"
+

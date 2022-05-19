@@ -3,9 +3,10 @@ import shutil
 import zipfile
 from FuncFiles.convert import fastConvert
 import FuncFiles.config as config
-
+from FuncFiles.support_funcs import fprint
 
 def find_new_to_unzip(zip_folder):
+    fprint("Find new files to unzip")
     all_z = os.listdir(zip_folder)
     file = open("../Data/InfoFiles/unzipped.txt", "r")
     un_z = [row.strip() for row in file]
@@ -31,13 +32,15 @@ def find_new_to_unzip(zip_folder):
         else:
             i += 1
     if no_new:
+        fprint("No more to unzip")
         print("No more to unzip")
         return False
     unzipping = all_z[i]
+    fprint("Found: "+str(all_z[i]))
     return unzipping
 
 
-def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None):
+def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None, logger=None):
     unzipping = find_new_to_unzip(zip_folder)
     if unzipping == False:
         return False
@@ -48,6 +51,7 @@ def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None):
     config.conv_logs["song name"] = unzipping
 
     print("Start unzipping " + unzipping)
+    fprint("Start unzipping " + unzipping)
     # проверяем наличие всего
 
     frame.curr_act_lbl["text"] = "Checking before unzip"
@@ -58,7 +62,9 @@ def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None):
         file = open("../Data/InfoFiles/badzipped.txt", "a")
         file.write(unzipping + "\n")
         file.close()
+        fprint("Problems with files")
         return False
+    fprint("Files found")
     egg = files[0]
     norm = files[1]
     info = files[2]
@@ -69,11 +75,14 @@ def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None):
     res = fillToConvert(files, unzipping, zip_folder, verbose, frame=frame)
 
     if res:
+
         file = open("../Data/InfoFiles/unzipped.txt", "a", encoding="utf-8")
         file.write(unzipping + "\n")
         file.close()
         path = zip_folder + "/" + unzipping
         os.remove(path)
+        logger.info["unzipped"]["good"]["num"] += 1
+        logger.info["unzipped"]["good"]["arr"].append(unzipping)
     else:
         path = unzipping
         file = open("../Data/InfoFiles/badzipped.txt", "a", encoding="utf-8")
@@ -83,8 +92,10 @@ def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None):
         file_destination = "../Data/BadZipped"
         shutil.move(path, file_destination)
         config.bad_zipped += 1
+        logger.info["unzipped"]["bad"]["num"] += 1
+        logger.info["unzipped"]["bad"]["arr"].append(unzipping)
         try:
-            frame.mastsong_name_lbl["text"] = unzipping
+            frame.song_name_lbl["text"] = unzipping
         except:
             pass
         frame.bad_z_lbl["text"] = "Количество плохих песен: " + str(config.bad_zipped)
@@ -106,6 +117,7 @@ def checking(unzipping, zip_folder):
         print("Error: no .egg")
         print("File: " + unzipping)
         print("--------------")
+        fprint("Error: no .egg, file: " + unzipping)
         return -1
 
     norm_uf = True
@@ -120,6 +132,7 @@ def checking(unzipping, zip_folder):
                 norm_uf = False
                 norm.append(file.filename)
             else:
+
                 if file.filename in incorrect_files:
                     pass
                 else:
@@ -133,11 +146,14 @@ def checking(unzipping, zip_folder):
                     else:
                         norm_uf = False
                         norm.append(file.filename)
+                        fprint("New level: " + str(file.filename))
+
 
     if norm_uf:
         print("--------------")
-        print("Error: no Normal level")
+        print("Error: no acceptable level")
         print("File: " + unzipping)
+        fprint("No acceptable level, file: " + unzipping)
         print("--------------")
         return -1
 
@@ -151,6 +167,7 @@ def checking(unzipping, zip_folder):
         print("--------------")
         print("Error: no info.dat")
         print("File: " + unzipping)
+        fprint("No info.dat, file: " + unzipping)
         print("--------------")
         return -1
 
@@ -179,11 +196,13 @@ def fillToConvert(files, unzipping, zip_folder, verbose=0, frame=None):
     egg, norms, info = files
     zf = zipfile.ZipFile(zip_folder + "/" + unzipping)
     places = []
+    fprint("Make place in Converted")
     for i in range(len(norms)):
         all_p = os.listdir("../Data/Converted")
         place = str(len(all_p) + 1)
         if verbose == 1:
             print(place)
+        fprint(place)
         os.mkdir("../Data/Converted/" + place)
 
         zf.extract(egg, "../Data/Converted/" + place)

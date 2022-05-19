@@ -1,6 +1,8 @@
 import os
 import pickle
 import numpy as np
+import FuncFiles.config as config
+
 
 class DataLogger():
     def __init__(self):
@@ -10,14 +12,33 @@ class DataLogger():
         self.down = {
             "time": {"deltas": [], "full": [0], "new": []}
         }
+        file = open('../logs/info.pickle', "r")
+        test = file.readline()
+        file.close()
+        if test == "":
+            self.info = {
+                "unzipped": {
+                    "good": {"num": 0, "arr": []},
+                    "bad": {"num": 0, "arr": []}
+                },
+                "downloaded": {
+                    "good": {"num": 0, "arr": []},
+                    "bad": {"num": 0, "arr": []}
+                }
+            }
+        else:
 
+            with open('../logs/info.pickle', 'rb') as handle:
+                self.info = pickle.load(handle)
+        config.bad_downloaded = self.info["downloaded"]["bad"]["num"]
+        config.bad_zipped = self.info["unzipped"]["bad"]["num"]
         self.conv = {
             "time": {"deltas": [], "full": [0], "new": []}
         }
         file = open("../logs/downloading.txt", "r")
         full_time = 0
         for line in file.readlines():
-            #print(line)
+            # print(line)
             if line == "-\n":
                 self.down["time"]["full"].append(full_time)
             else:
@@ -29,7 +50,7 @@ class DataLogger():
         file = open("../logs/converting.txt", "r")
         full_time = 0
         for line in file.readlines():
-            #print(line)
+            # print(line)
             if line == "-\n":
                 self.conv["time"]["full"].append(full_time)
             else:
@@ -38,7 +59,6 @@ class DataLogger():
                 full_time += delta
                 self.conv["time"]["full"].append(full_time)
         file.close()
-
 
     def save(self):
         file = open("../logs/downloading.txt", "a")
@@ -51,7 +71,8 @@ class DataLogger():
             file.write(str(self.conv["time"]["new"][i]) + "\n")
         self.conv["time"]["new"] = []
         file.close()
-        #print("save")
+        with open('../logs/info.pickle', 'wb') as handle:
+            pickle.dump(self.info, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def add(self, type, value, is_correct):
         if type[0] == "down":
@@ -77,13 +98,13 @@ class DataLogger():
     def get_plot_time(self):
         down = np.array(self.down["time"]["full"])
         conv = np.array(self.conv["time"]["full"])
-        if down.shape!=conv.shape:
+        if down.shape != conv.shape:
             print("---")
             print("Разные времена")
             print("---")
         all = down + conv
-        label1 = "Среднее время загрузки: "+str(round(np.array(self.down["time"]["deltas"]).mean(), 2))+" c."
-        label2 = "Среднее время обработки: " + str(round(np.array(self.conv["time"]["deltas"]).mean(), 1))+" c."
+        label1 = "Среднее время загрузки: " + str(round(np.array(self.down["time"]["deltas"]).mean(), 2)) + " c."
+        label2 = "Среднее время обработки: " + str(round(np.array(self.conv["time"]["deltas"]).mean(), 1)) + " c."
         label3 = "Количество обработанных песен: " + str(len(self.conv["time"]["full"]))
         label4 = "Количество полученных пар: " + str(len(os.listdir("../Data/Converted")))
         return down, conv, all, label1, label2, label3, label4

@@ -7,7 +7,7 @@ import time
 import FuncFiles.config as config
 from FuncFiles.unzipp import unzip_new
 from FuncFiles.parsing import download_page, parse_page, single_download
-from FuncFiles.support_funcs import put_corr_time
+from FuncFiles.support_funcs import put_corr_time, fprint
 from DataApplication.logger import DataLogger
 from DataApplication.plot import PlotFrame
 
@@ -78,17 +78,27 @@ def downconving(frame):
         config.downconving["started"] = True
         config.dl_logs["current operation"] = "Изучение страницы"
         frame.curr_act_lbl["text"] = "Изучение страницы"
-        urls = parse_page(num, verbose=0)
+        fprint("")
+        fprint("Start parse_page: " + str(num))
+        try:
+            urls = parse_page(num, verbose=0)
+        except Exception as error:
+            fprint("Error in parse_page: " + str(error))
         frame.page_progress["max"] = len(urls)
         frame.page_progress["value"] = 0
         ind = 0
         while config.downconving["permitted"] and (ind < len(urls)):
+            fprint("")
             url = urls[ind]
             frame.page_progress["value"] = ind
 
             config.downconving["downloading"] = True
             curr_start1 = time.time()
-            res = single_download(url, 0, True, frame, i=ind, length=len(urls))
+            fprint("Start single_download: " + str(url))
+            try:
+                res = single_download(url, frame, frame.parent.logger, i=ind, length=len(urls))
+            except Exception as error:
+                fprint("Error in single_download: " + str(error))
             curr_end1 = time.time()
             config.downconving["downloading"] = False
             #if res!="already_done":
@@ -98,12 +108,19 @@ def downconving(frame):
 
                 config.downconving["converting"] = True
                 curr_start2 = time.time()
-                res1 = unzip_new("../Data/Downloads", frame=frame)
+                fprint("Start unzip_new")
+                try:
+                    res1 = unzip_new("../Data/Downloads", frame=frame, logger=frame.parent.logger)
+                except Exception as error:
+                    fprint("Error in unzip_new: " + str(error))
+
                 curr_end2 = time.time()
                 res2 = res1 and res
                 frame.parent.logger.add(["down", "time"], curr_end1 - curr_start1, res2)
                 frame.parent.logger.add(["conv", "time"], curr_end2-curr_start2, res2)
                 config.downconving["converting"] = False
+            else:
+                fprint("Avoid unzip_new, because: " + str(res))
 
             put_corr_time(frame, "downconv")
             frame.page_progress["value"] = ind+1
