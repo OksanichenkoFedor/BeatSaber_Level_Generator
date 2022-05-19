@@ -7,10 +7,10 @@ import FuncFiles.config as config
 
 def find_new_to_unzip(zip_folder):
     all_z = os.listdir(zip_folder)
-    file = open("InfoFiles/unzipped.txt", "r")
+    file = open("../Data/InfoFiles/unzipped.txt", "r")
     un_z = [row.strip() for row in file]
     file.close()
-    file = open("InfoFiles/badzipped.txt", "r")
+    file = open("../Data/InfoFiles/badzipped.txt", "r")
     b_z = [row.strip() for row in file]
     un_z = un_z + b_z
     file.close()
@@ -26,6 +26,8 @@ def find_new_to_unzip(zip_folder):
                 no_new = False
             else:
                 print("Не архив: " + all_z[i])
+                os.remove(zip_folder + "/" + all_z[i])
+                i += 1
         else:
             i += 1
     if no_new:
@@ -34,16 +36,15 @@ def find_new_to_unzip(zip_folder):
     unzipping = all_z[i]
     return unzipping
 
-def unzip_new(zip_folder = "Zipped", verbose=0, frame = None):
 
+def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None):
     unzipping = find_new_to_unzip(zip_folder)
-    if unzipping==False:
+    if unzipping == False:
         return False
-
-    #frame.curr_act_lbl["text"] = "Unzipping"
-    #config.conv_logs["current operation"] = "Unzipping"
-
-    frame.song_name_lbl["text"] = unzipping
+    try:
+        frame.song_name_lbl["text"] = unzipping
+    except:
+        pass
     config.conv_logs["song name"] = unzipping
 
     print("Start unzipping " + unzipping)
@@ -54,7 +55,7 @@ def unzip_new(zip_folder = "Zipped", verbose=0, frame = None):
 
     files = checking(unzipping, zip_folder)
     if files == -1:
-        file = open("InfoFiles/badzipped.txt", "a")
+        file = open("../Data/InfoFiles/badzipped.txt", "a")
         file.write(unzipping + "\n")
         file.close()
         return False
@@ -68,28 +69,31 @@ def unzip_new(zip_folder = "Zipped", verbose=0, frame = None):
     res = fillToConvert(files, unzipping, zip_folder, verbose, frame=frame)
 
     if res:
-        file = open("InfoFiles/unzipped.txt", "a", encoding="utf-8")
+        file = open("../Data/InfoFiles/unzipped.txt", "a", encoding="utf-8")
         file.write(unzipping + "\n")
         file.close()
         path = zip_folder + "/" + unzipping
         os.remove(path)
     else:
         path = unzipping
-        file = open("InfoFiles/badzipped.txt", "a", encoding="utf-8")
+        file = open("../Data/InfoFiles/badzipped.txt", "a", encoding="utf-8")
         file.write(path + "\n")
         file.close()
         path = zip_folder + "/" + unzipping
-        file_destination = "BadZipped"
+        file_destination = "../Data/BadZipped"
         shutil.move(path, file_destination)
-        config.bad_zipped+=1
-        frame.bad_lbl["text"] = "Количество плохих песен: "+str(config.bad_zipped)
-    #print("Unzipped " + unzipping)
+        config.bad_zipped += 1
+        try:
+            frame.mastsong_name_lbl["text"] = unzipping
+        except:
+            pass
+        frame.bad_z_lbl["text"] = "Количество плохих песен: " + str(config.bad_zipped)
 
     return True
 
 
 def checking(unzipping, zip_folder):
-    zf = zipfile.ZipFile(zip_folder+"/" + unzipping)
+    zf = zipfile.ZipFile(zip_folder + "/" + unzipping)
     l = zf.infolist()
     egg_uf = True
     egg = ""
@@ -119,12 +123,12 @@ def checking(unzipping, zip_folder):
                 if file.filename in incorrect_files:
                     pass
                 else:
-                    if (not (file.filename.endswith("awless.dat"))) and (not (file.filename.endswith("egree.dat"))) and\
+                    if (not (file.filename.endswith("awless.dat"))) and (not (file.filename.endswith("egree.dat"))) and \
                             (not (file.filename.endswith("rrows.dat"))) and \
                             (not (file.filename.endswith("Single Saber.dat"))) and \
                             (not (file.filename.endswith("OneSaber.dat"))):
-                        #print(file.filename)
-                        #print(unzipping)
+                        # print(file.filename)
+                        # print(unzipping)
                         pass
                     else:
                         norm_uf = False
@@ -157,40 +161,39 @@ def fillPure(files, unzipping, zip_folder):
     egg, norm, info = files
     zf = zipfile.ZipFile(zip_folder + "/" + unzipping)
 
-    all_p = os.listdir("Converted")
+    all_p = os.listdir("../Data/Converted")
     place = str(len(all_p) + 1)
-    os.mkdir("Converted/" + place)
+    os.mkdir("../Data/Converted/" + place)
 
-    zf.extract(egg, "Converted/" + place)
-    os.rename("Converted/" + place + "/" + egg, "Converted/" + place + "/song.egg")
+    zf.extract(egg, "../Data/Converted/" + place)
+    os.rename("../Data/Converted/" + place + "/" + egg, "../Data/Converted/" + place + "/song.egg")
 
-    zf.extract(norm, "Converted/" + place)
-    os.rename("Converted/" + place + "/" + norm, "Converted/" + place + "/Level.dat")
+    zf.extract(norm, "../Data/Converted/" + place)
+    os.rename("../Data/Converted/" + place + "/" + norm, "../Data/Converted/" + place + "/Level.dat")
 
-    zf.extract(info, "Pure/" + place)
-    os.rename("Converted/" + place + "/" + info, "Converted/" + place + "/info.dat")
+    zf.extract(info, "../Data/Pure/" + place)
+    os.rename("../Data/Converted/" + place + "/" + info, "../Data/Converted/" + place + "/info.dat")
 
 
-def fillToConvert(files, unzipping, zip_folder, verbose = 0, frame = None):
-
+def fillToConvert(files, unzipping, zip_folder, verbose=0, frame=None):
     egg, norms, info = files
     zf = zipfile.ZipFile(zip_folder + "/" + unzipping)
     places = []
     for i in range(len(norms)):
-        all_p = os.listdir("Converted")
+        all_p = os.listdir("../Data/Converted")
         place = str(len(all_p) + 1)
-        if verbose==1:
+        if verbose == 1:
             print(place)
-        os.mkdir("Converted/" + place)
+        os.mkdir("../Data/Converted/" + place)
 
-        zf.extract(egg, "Converted/" + place)
-        os.rename("Converted/" + place + "/" + egg, "Converted/" + place + "/song.egg")
+        zf.extract(egg, "../Data/Converted/" + place)
+        os.rename("../Data/Converted/" + place + "/" + egg, "../Data/Converted/" + place + "/song.egg")
 
-        zf.extract(norms[i], "Converted/" + place)
-        os.rename("Converted/" + place + "/" + norms[i], "Converted/" + place + "/Level.dat")
+        zf.extract(norms[i], "../Data/Converted/" + place)
+        os.rename("../Data/Converted/" + place + "/" + norms[i], "../Data/Converted/" + place + "/Level.dat")
 
-        zf.extract(info, "Converted/" + place)
-        os.rename("Converted/" + place + "/" + info, "Converted/" + place + "/info.dat")
+        zf.extract(info, "../Data/Converted/" + place)
+        os.rename("../Data/Converted/" + place + "/" + info, "../Data/Converted/" + place + "/info.dat")
         places.append(place)
 
     frame.curr_act_lbl["text"] = "Converting"

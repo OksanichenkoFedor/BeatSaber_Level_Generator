@@ -31,6 +31,19 @@ dl_logs = {
     "current operation": "-"
 }
 
+downconving = {
+    "permitted" :False,
+    "started" :False,
+    "downloading" :False,
+    "converting" :False,
+    "num_thread" :0,
+    "start number": 0,
+    "end number": 10000,
+    "start time" :0,
+    "last time" :0
+}
+
+
 bad_zipped = 0
 bad_downloaded = 0
 
@@ -41,3 +54,9 @@ bad_dl = []
 
 cont_working = False
 num = 10
+
+fontsize = 10
+font_delta = 0.03
+figsize = (20, 7)
+text_x = 0.01
+text_y = 0.002

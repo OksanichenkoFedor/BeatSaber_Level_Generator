@@ -8,7 +8,7 @@ import FuncFiles.config as config
 
 def convert_new():
     all_p = os.listdir("Pure")
-    file = open("InfoFiles/converted.txt", "r")
+    file = open("../Data/InfoFiles/converted.txt", "r")
     cnv = [row.strip() for row in file]
     file.close()
     no_new = True
@@ -30,7 +30,7 @@ def convert_new():
 
     fillConverted(converting)
 
-    file = open("InfoFiles/converted.txt", "a")
+    file = open("../Data/InfoFiles/converted.txt", "a")
     file.write(converting + "\n")
     file.close()
     print("Converted " + converting)
@@ -38,20 +38,20 @@ def convert_new():
 
 
 def fillConverted(converting, save = True):
-    all_c = os.listdir("Converted")
+    all_c = os.listdir("../Data/Converted")
     place = str(len(all_c) + 1)
 
 
-    egg_fpath = "Converted/" + place + "/song"
-    cat_level_fpath = "Converted/" + place + "/CatLevel.txt"
-    text_level_fpath = "Converted/" + place + "/TextLevel.txt"
-    token_level_fpath = "Converted/" + place + "/TokenLevel.txt"
-    beat_fpath = "Converted/" + place + "/beat.txt"
-    info_fpath = "Converted/" + place + "/info.txt"
+    egg_fpath = "../Data/Converted/" + place + "/song"
+    cat_level_fpath = "../Data/Converted/" + place + "/CatLevel.txt"
+    text_level_fpath = "../Data/Converted/" + place + "/TextLevel.txt"
+    token_level_fpath = "../Data/Converted/" + place + "/TokenLevel.txt"
+    beat_fpath = "../Data/Converted/" + place + "/beat.txt"
+    info_fpath = "../Data/Converted/" + place + "/info.txt"
 
-    egg_path = "Pure/" + converting + "/song.egg"
-    norm_path = "Pure/" + converting + "/Normal.dat"
-    info_path = "Pure/" + converting + "/info.dat"
+    egg_path = "../Data/Pure/" + converting + "/song.egg"
+    norm_path = "../Data/Pure/" + converting + "/Normal.dat"
+    info_path = "../Data/Pure/" + converting + "/info.dat"
 
     file = open(info_path, 'r')
     dic = file.read()
@@ -73,14 +73,6 @@ def fillConverted(converting, save = True):
         l_curr.readFromFile(norm_path, is_beat=True, beat=beat)
         cat_level = l_curr.getCatNotesVer3(proportion=(1.0 / 12.0), is_beat=True, beat=beat)
         text_level = l_curr.getTextNotes(proportion=(1.0 / 12.0), is_beat=True, beat=beat)
-        #l_curr_1 = BSLevel()
-        #l_curr_1.readFromTextMass(proportion=(1.0 / 12.0), nts=text_level)
-        #text_level_1 = l_curr_1.getTextNotes(proportion=(1.0 / 12.0), is_beat=True, beat=beat)
-        #cat_level_1 = l_curr_1.getCatNotesVer3(proportion=(1.0 / 12.0), is_beat=True, beat=beat)
-        #print("Converted level")
-
-        #y, sr = librosa.load(egg_path)
-        #tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
         y, sr = librosa.load(egg_path, sr=int(beat * mult))
 
         furie = abs(signal.stft(y, frame_length=int(60*mult), frame_step=int(60*mult), pad_end=True))
@@ -88,7 +80,7 @@ def fillConverted(converting, save = True):
         new_level = cat_level.reshape((cat_level.shape[0],
                                        cat_level.shape[1] * cat_level.shape[2] * cat_level.shape[3]))
         if save:
-            os.mkdir("Converted/" + place)
+            os.mkdir("../Data/Converted/" + place)
             file = open(beat_fpath, "w")
             file.write(str(60.0 / beat))
             file.close()
@@ -112,8 +104,8 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
 
 
 
-    egg_path = "Converted/" + converting[0] + "/song.egg"
-    info_path = "Converted/" + converting[0] + "/info.dat"
+    egg_path = "../Data/Converted/" + converting[0] + "/song.egg"
+    info_path = "../Data/Converted/" + converting[0] + "/info.dat"
 
     bad_info = True
     beat = 1
@@ -144,7 +136,7 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
         else:
             print("Слишком короткий или слишком длинный бит (" + str(int(beat)) + ")" + " Файл: " + unzipping)
         for i in range(len(converting)):
-            shutil.rmtree("Converted/" + converting[i])
+            shutil.rmtree("../Data/Converted/" + converting[i])
         return False
     else:
         frame.curr_act_lbl["text"] = "Furie transformation"
@@ -154,7 +146,11 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
         #print("2.3")
         #print(egg_path)
         #print(int(beat * mult))
-        y, sr = librosa.load(egg_path, sr=int(beat * mult))
+        try:
+            y, sr = librosa.load(egg_path, sr=int(beat * mult))
+        except Exception as e:
+            print(e)
+            return False
         #print("2.3")
         # 60 / 24 - 2.5 за бит делаем 48 ударов
         furie = abs(signal.stft(y, frame_length=int(2.5 * mult), frame_step=int(2.5 * mult), pad_end=True))
@@ -165,13 +161,13 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
         if start_shape!=np_song.shape:
             print("Шумы плохо добавляются в песню")
         for i in range(len(converting)):
-            norm_path = "Converted/" + converting[i] + "/Level.dat"
-            egg_fpath = "Converted/" + converting[i] + "/song"
-            text_level_fpath = "Converted/" + converting[i] + "/TextLevel.txt"
-            beat_fpath = "Converted/" + converting[i] + "/SongInfo.txt"
-            info_fpath = "Converted/" + converting[i] + "/info.txt"
-            egg_path = "Converted/" + converting[i] + "/song.egg"
-            info_path = "Converted/" + converting[i] + "/info.dat"
+            norm_path = "../Data/Converted/" + converting[i] + "/Level.dat"
+            egg_fpath = "../Data/Converted/" + converting[i] + "/song"
+            text_level_fpath = "../Data/Converted/" + converting[i] + "/TextLevel.txt"
+            beat_fpath = "../Data/Converted/" + converting[i] + "/SongInfo.txt"
+            info_fpath = "../Data/Converted/" + converting[i] + "/info.txt"
+            egg_path = "../Data/Converted/" + converting[i] + "/song.egg"
+            info_path = "../Data/Converted/" + converting[i] + "/info.dat"
 
             correct_level = False
             l_curr = BSLevel()
@@ -219,7 +215,7 @@ def fastConvert(converting, unzipping, curr_file, save = True, frame = None):
 
         if unfound_corr_level:
             for i in range(len(converting)):
-                shutil.rmtree("Converted/" + converting[i])
+                shutil.rmtree("../Data/Converted/" + converting[i])
             return False
         else:
             return True#new_level, np_song, text_level#, text_level_1) ,(l_curr, l_curr_1), (cat_level, cat_level_1)
