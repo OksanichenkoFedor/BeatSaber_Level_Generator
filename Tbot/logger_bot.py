@@ -33,5 +33,18 @@ def send_info(message):
     except Exception as e:
         bot.send_message(message.chat.id, "Ошибка: "+str(e))
 
+@bot.message_handler(commands=["logs"])
+def send_logs(message):
+    try:
+        file = open("../logs/full_log.txt", "r")
+        info = file.readlines()[-100:]
+        file.close()
+        curr_str = ""
+        for line in info:
+            curr_str+=line
+        bot.send_message(message.chat.id, curr_str)
+    except Exception as e:
+        bot.send_message(message.chat.id, "Ошибка: "+str(e))
+
 print("Бот поднят")
 bot.polling()
