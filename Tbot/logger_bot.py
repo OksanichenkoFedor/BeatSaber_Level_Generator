@@ -4,6 +4,16 @@ import matplotlib.pyplot as plt
 
 bot = telebot.TeleBot("5337445036:AAGQDYKj-MCSfgAIOsUytcUMhySBCdTR0qM", parse_mode=None)
 
+
+def bad_log_line(curr_line):
+    if curr_line=="---m":
+        return True
+    #if curr_line=="---c":
+    #    return True
+    #if curr_line=="---p":
+    #    return True
+    return False
+
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     bot.send_message(message.chat.id,"Howdy, how are you doing?")
@@ -45,6 +55,31 @@ def send_logs(message):
         bot.send_message(message.chat.id, curr_str)
     except Exception as e:
         bot.send_message(message.chat.id, "Ошибка: "+str(e))
+
+@bot.message_handler(commands=["bad_logs_conv"])
+def send_logs_with_problem_c(message):
+    try:
+        file = open("../logs/full_log.txt", "r")
+        info = file.readlines()
+        file.close()
+        un_found = True
+        ind = 0
+        while(ind<len(info)):
+            if bad_log_line(info[ind][:-1]):
+                un_found = False
+                start = max(0, ind-10)
+                end = min(len(info), ind+10)
+                curr_str = "".join(info[start:end])
+                bot.send_message(message.chat.id, curr_str)
+                ind+=3
+            else:
+                ind+=1
+        if un_found:
+            bot.send_message(message.chat.id, "Искомых ошибок не было")
+    except Exception as e:
+        bot.send_message(message.chat.id, "Ошибка: " + str(e))
+
+
 
 print("Бот поднят")
 bot.polling()

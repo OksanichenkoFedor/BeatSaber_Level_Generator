@@ -1,4 +1,3 @@
-
 mkdir Data
 cd Data
 mkdir BadPure

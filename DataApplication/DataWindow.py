@@ -7,9 +7,10 @@ import time
 import FuncFiles.config as config
 from FuncFiles.unzipp import unzip_new
 from FuncFiles.parsing import download_page, parse_page, single_download
-from FuncFiles.support_funcs import put_corr_time, fprint
+from FuncFiles.support_funcs import put_corr_time, fprint, clean
 from DataApplication.logger import DataLogger
 from DataApplication.plot import PlotFrame
+import traceback as tr
 
 
 def converting(frame):
@@ -83,7 +84,9 @@ def downconving(frame):
         try:
             urls = parse_page(num, verbose=0)
         except Exception as error:
-            fprint("Error in parse_page: " + str(error))
+            fprint("---m")
+            fprint("Error in parse_page: " + str(tr.format_exc()))
+            fprint("---m")
         frame.page_progress["max"] = len(urls)
         frame.page_progress["value"] = 0
         ind = 0
@@ -98,7 +101,9 @@ def downconving(frame):
             try:
                 res = single_download(url, frame, frame.parent.logger, i=ind, length=len(urls))
             except Exception as error:
-                fprint("Error in single_download: " + str(error))
+                fprint("---m")
+                fprint("Error in single_download: " + str(tr.format_exc()))
+                fprint("---m")
             curr_end1 = time.time()
             config.downconving["downloading"] = False
             #if res!="already_done":
@@ -112,7 +117,9 @@ def downconving(frame):
                 try:
                     res1 = unzip_new("../Data/Downloads", frame=frame, logger=frame.parent.logger)
                 except Exception as error:
-                    fprint("Error in unzip_new: " + str(error))
+                    fprint("---m")
+                    fprint("Error in unzip_new: " + str(tr.format_exc()))
+                    fprint("---m")
 
                 curr_end2 = time.time()
                 res2 = res1 and res
@@ -139,6 +146,9 @@ def downconving(frame):
 
         frame.page_progress["value"] = 0
         frame.main_progress["value"] = num - config.downconving["start number"]
+        fprint("Clean data application directory from .tmp files")
+        clean()
+
 
     frame.dl_but["text"] = "Загрузка"
     frame.info_lbl["text"] = "-Пусто-"
@@ -345,8 +355,6 @@ class DownloadConvertWin(Frame):
             self.dl_but["text"] = "Остановка"
 
     def change_pages(self, *args):
-        print("sdsdsdsdsd")
-        #self.main_progress["max"] = config.downconving["end number"] - config.downconving["start number"]
         old_st = config.downconving["start number"]
         old_end = config.downconving["end number"]
         good_values = True

@@ -419,6 +419,8 @@ class BSLevel():
                 """
         res_mass = []
 
+        self.correct_massive = True
+
         note_ind = 0
         time = 0
         not_end = True
@@ -439,7 +441,6 @@ class BSLevel():
                 if num <= 444:
                     res_mass.append(str(num))
                 note_ind += 1
-            #res_mass.append('0')
             if time % int(1.0/proportion) == 0:
                 res_mass.append("-1")
                 pass
@@ -448,8 +449,9 @@ class BSLevel():
                 pass
 
             time += 1
-
-        return " ".join(res_mass)
+        if self.correct_massive:
+            return " ".join(res_mass)
+        return -1
 
     def giveTextedNote(self, ind):
 
@@ -460,6 +462,7 @@ class BSLevel():
         num = int((1+4*9)*(3*x+y)+1+type*9+dir)
 
         if (num > 445) or (num<0):
+            self.correct_massive = False
             print("В нотах какая-то проблема с индексом(он слишком большой)")
             print(self.notes[ind])
 

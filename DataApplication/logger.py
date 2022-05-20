@@ -30,6 +30,8 @@ class DataLogger():
 
             with open('../logs/info.pickle', 'rb') as handle:
                 self.info = pickle.load(handle)
+        config.downloaded = self.info["downloaded"]["good"]["arr"]
+        config.bad_dl = self.info["downloaded"]["bad"]["arr"]
         config.bad_downloaded = self.info["downloaded"]["bad"]["num"]
         config.bad_zipped = self.info["unzipped"]["bad"]["num"]
         self.conv = {

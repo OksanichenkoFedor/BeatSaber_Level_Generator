@@ -20,7 +20,7 @@ def parse_page(num, verbose=0):
         response = requests.get(url)
 
     except:
-        fprint("Данная страница не существует: " + url)
+        fprint("This page does not exist: " + url)
         print("Данная страница не существует: " + url)
         return 0
     soup = BeautifulSoup(response.text, 'lxml')
@@ -32,20 +32,14 @@ def parse_page(num, verbose=0):
             if '-download-zip' in txt['class']:
                 urls.append(txt['href'])
 
-    ans = "Страница номер " + str(num) + " обработана. Найдено " + str(len(urls)) + " песен"
+    ans = "Page number " + str(num) + " processed. Found " + str(len(urls)) + " songs"
     fprint(ans)
     return urls
 
     # print(mydivs)
 
 
-def update_info_files():
-    file = open("../Data/InfoFiles/downloaded.txt", "r")
-    config.downloaded = file.readlines()
-    file.close()
-    file = open("../Data/InfoFiles/bad_dl.txt", "r")
-    config.bad_dl = file.readlines()
-    file.close()
+def update_info_files(logger):
 
     for i in range(len(config.bad_dl)):
         if config.bad_dl[i][-1:] == "\n":
@@ -84,7 +78,7 @@ def download_page(num, verbose, add_frame=False, frame=None):
 
 
 def single_download(url, frame, logger, i=0, length=0):
-    if not ((url in config.downloaded) or (url in config.bad_dl)):
+    if not ((url in logger.info["downloaded"]["good"]["arr"]) or (url in logger.info["downloaded"]["bad"]["arr"])):
 
         frame.info_down_lbl["text"] = str(i + 1) + " из " + str(length)
         fprint("Try to download: " + url)
@@ -97,6 +91,7 @@ def single_download(url, frame, logger, i=0, length=0):
             file.close()
             logger.info["downloaded"]["good"]["num"]+=1
             logger.info["downloaded"]["good"]["arr"].append(url)
+            logger.save()
             config.downloaded.append(url)
             fprint("Correct download: " + url)
             return True
@@ -105,7 +100,9 @@ def single_download(url, frame, logger, i=0, length=0):
             print(e)
             print("Проблема с " + url)
             fprint("Fail in downloading: " + url)
+            fprint("---p")
             fprint("Error: " + str(e))
+            fprint("---p")
             # print(os.listdir("../Data/InfoFiles/"))
             file = open("../Data/InfoFiles/bad_dl.txt", "a")
             file.write(url + "\n")

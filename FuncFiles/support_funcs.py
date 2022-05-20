@@ -1,5 +1,6 @@
 import time
 import FuncFiles.config as config
+import os
 
 def put_corr_time(frame, type):
     now_time = time.time()
@@ -33,8 +34,18 @@ def put_corr_time(frame, type):
 
 def fprint(message, type="to file", filename="../logs/full_log.txt"):
     if type=="to file":
-        file = open(filename,"a")
-        file.write(message+"\n")
+        file = open(filename, "a")
+        try:
+            file.write(str(message)+"\n")
+        except:
+            file.write("Can't write \n")
         file.close()
     else:
         pass
+
+
+def clean():
+    app_dir = os.listdir("../DataApplication")
+    for file in app_dir:
+        if ".tmp" in file:
+            os.remove("../DataApplication/"+file)

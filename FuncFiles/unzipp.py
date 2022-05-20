@@ -19,9 +19,8 @@ def find_new_to_unzip(zip_folder):
     i = 0
     while (no_new and (i < len(all_z))):
         new = True
-        for z in un_z:
-            if z == all_z[i]:
-                new = False
+        if all_z[i] in un_z:
+            new = False
         if new:
             if all_z[i][-4:] == ".zip":
                 no_new = False
@@ -33,10 +32,15 @@ def find_new_to_unzip(zip_folder):
             i += 1
     if no_new:
         fprint("No more to unzip")
+        curr_downloads = os.listdir("../Data/Downloads")
+        fprint("In downloads now " + str(len(curr_downloads)) + " files")
         print("No more to unzip")
         return False
     unzipping = all_z[i]
-    fprint("Found: "+str(all_z[i]))
+    try:
+        fprint("Found: "+str(all_z[i]))
+    except:
+        fprint("Can't print file name")
     return unzipping
 
 
@@ -60,7 +64,10 @@ def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None, logger=None):
     files = checking(unzipping, zip_folder)
     if files == -1:
         file = open("../Data/InfoFiles/badzipped.txt", "a")
-        file.write(unzipping + "\n")
+        try:
+            file.write(unzipping + "\n")
+        except:
+            pass
         file.close()
         fprint("Problems with files")
         return False
