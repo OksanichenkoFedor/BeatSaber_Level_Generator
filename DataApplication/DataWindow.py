@@ -106,7 +106,6 @@ def downconving(frame):
                 fprint("---m")
             curr_end1 = time.time()
             config.downconving["downloading"] = False
-            #if res!="already_done":
             if res==True:
                 print(res)
 

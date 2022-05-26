@@ -3,24 +3,29 @@ import shutil
 import zipfile
 from FuncFiles.convert import fastConvert
 import FuncFiles.config as config
-from FuncFiles.support_funcs import fprint
+from FuncFiles.support_funcs import fprint, check_conv_and_clean
 
-def find_new_to_unzip(zip_folder):
+def find_new_to_unzip(zip_folder, logger):
+    found = check_conv_and_clean()
+    if found:
+        fprint("Cleaned bad converted files(!=0)")
     fprint("Find new files to unzip")
     all_z = os.listdir(zip_folder)
-    file = open("../Data/InfoFiles/unzipped.txt", "r")
-    un_z = [row.strip() for row in file]
-    file.close()
-    file = open("../Data/InfoFiles/badzipped.txt", "r")
-    b_z = [row.strip() for row in file]
+    un_z = logger.info["unzipped"]["good"]["arr"]
+    b_z = logger.info["unzipped"]["bad"]["arr"]
     un_z = un_z + b_z
-    file.close()
     no_new = True
     i = 0
     while (no_new and (i < len(all_z))):
         new = True
         if all_z[i] in un_z:
             new = False
+        if all_z[i] in logger.very_bad:
+            path = zip_folder + "/" + all_z[i]
+            file_destination = "../Data/BadZipped"
+            shutil.move(path, file_destination)
+            new = False
+            fprint("Found VERY BAD: "+str(all_z[i]))
         if new:
             if all_z[i][-4:] == ".zip":
                 no_new = False
@@ -45,7 +50,7 @@ def find_new_to_unzip(zip_folder):
 
 
 def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None, logger=None):
-    unzipping = find_new_to_unzip(zip_folder)
+    unzipping = find_new_to_unzip(zip_folder, logger)
     if unzipping == False:
         return False
     try:
@@ -63,18 +68,10 @@ def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None, logger=None):
 
     files = checking(unzipping, zip_folder)
     if files == -1:
-        file = open("../Data/InfoFiles/badzipped.txt", "a")
-        try:
-            file.write(unzipping + "\n")
-        except:
-            pass
-        file.close()
+        logger.add(["conv", "file"], unzipping, False)
         fprint("Problems with files")
         return False
     fprint("Files found")
-    egg = files[0]
-    norm = files[1]
-    info = files[2]
 
     frame.curr_act_lbl["text"] = "Unzipping"
     config.conv_logs["current operation"] = "Unzipping"
@@ -82,25 +79,14 @@ def unzip_new(zip_folder="../Data/Zipped", verbose=0, frame=None, logger=None):
     res = fillToConvert(files, unzipping, zip_folder, verbose, frame=frame)
 
     if res:
-
-        file = open("../Data/InfoFiles/unzipped.txt", "a", encoding="utf-8")
-        file.write(unzipping + "\n")
-        file.close()
         path = zip_folder + "/" + unzipping
         os.remove(path)
-        logger.info["unzipped"]["good"]["num"] += 1
-        logger.info["unzipped"]["good"]["arr"].append(unzipping)
+        logger.add(["conv", "file"], unzipping, res)
     else:
-        path = unzipping
-        file = open("../Data/InfoFiles/badzipped.txt", "a", encoding="utf-8")
-        file.write(path + "\n")
-        file.close()
         path = zip_folder + "/" + unzipping
         file_destination = "../Data/BadZipped"
         shutil.move(path, file_destination)
-        config.bad_zipped += 1
-        logger.info["unzipped"]["bad"]["num"] += 1
-        logger.info["unzipped"]["bad"]["arr"].append(unzipping)
+        logger.add(["conv", "file"], unzipping, res)
         try:
             frame.song_name_lbl["text"] = unzipping
         except:
@@ -147,8 +133,6 @@ def checking(unzipping, zip_folder):
                             (not (file.filename.endswith("rrows.dat"))) and \
                             (not (file.filename.endswith("Single Saber.dat"))) and \
                             (not (file.filename.endswith("OneSaber.dat"))):
-                        # print(file.filename)
-                        # print(unzipping)
                         pass
                     else:
                         norm_uf = False

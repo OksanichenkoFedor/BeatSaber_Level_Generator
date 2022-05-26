@@ -1,6 +1,8 @@
 import time
 import FuncFiles.config as config
 import os
+import traceback as tr
+import shutil
 
 def put_corr_time(frame, type):
     now_time = time.time()
@@ -38,7 +40,8 @@ def fprint(message, type="to file", filename="../logs/full_log.txt"):
         try:
             file.write(str(message)+"\n")
         except:
-            file.write("Can't write \n")
+            pass
+            #file.write("Can't write: " + str(tr.format_exc()) + " \n")
         file.close()
     else:
         pass
@@ -49,3 +52,14 @@ def clean():
     for file in app_dir:
         if ".tmp" in file:
             os.remove("../DataApplication/"+file)
+
+def check_conv_and_clean():
+    found = False
+    files = os.listdir("../Data/Converted")
+    for conv in files:
+        curr_f = os.listdir("../Data/Converted/" + conv)
+        if ['info.txt', 'song.npy', 'SongInfo.txt', 'TextLevel.txt'] != curr_f:
+            shutil.rmtree("../Data/Converted/" + conv)
+            fprint("Remove last converted (was problem with C-code)")
+            found = True
+    return found

@@ -2,20 +2,22 @@ import os
 import pickle
 import numpy as np
 import FuncFiles.config as config
+import traceback as tr
+from FuncFiles.support_funcs import fprint
 
 
 class DataLogger():
     def __init__(self):
         self.load()
 
-    def load(self):
+    def load(self,):
         self.down = {
             "time": {"deltas": [], "full": [0], "new": []}
         }
-        file = open('../logs/info.pickle', "r")
-        test = file.readline()
-        file.close()
-        if test == "":
+        try:
+            with open('../logs/info.pickle', 'rb') as handle:
+                self.info = pickle.load(handle)
+        except:
             self.info = {
                 "unzipped": {
                     "good": {"num": 0, "arr": []},
@@ -26,21 +28,22 @@ class DataLogger():
                     "bad": {"num": 0, "arr": []}
                 }
             }
-        else:
-
-            with open('../logs/info.pickle', 'rb') as handle:
-                self.info = pickle.load(handle)
+            fprint("---l")
+            fprint("Problem with picle-reading info. : "+str(tr.format_exc()) )
+            fprint("---l")
+        with open("../FuncFiles/very_bad_zipped.pickle", 'rb') as handle:
+            self.very_bad = pickle.load(handle)
         config.downloaded = self.info["downloaded"]["good"]["arr"]
         config.bad_dl = self.info["downloaded"]["bad"]["arr"]
         config.bad_downloaded = self.info["downloaded"]["bad"]["num"]
         config.bad_zipped = self.info["unzipped"]["bad"]["num"]
+        config.bad_downloaded = self.info["downloaded"]["bad"]["num"]
         self.conv = {
             "time": {"deltas": [], "full": [0], "new": []}
         }
         file = open("../logs/downloading.txt", "r")
         full_time = 0
         for line in file.readlines():
-            # print(line)
             if line == "-\n":
                 self.down["time"]["full"].append(full_time)
             else:
@@ -86,6 +89,16 @@ class DataLogger():
                 else:
                     self.down["time"]["full"].append(self.down["time"]["full"][-1])
                     self.down["time"]["new"].append("-")
+            elif type[1] == "file":
+                if is_correct:
+                    self.info["downloaded"]["good"]["num"] += 1
+                    self.info["downloaded"]["good"]["arr"].append(value)
+                else:
+                    config.bad_downloaded += 1
+                    self.info["downloaded"]["bad"]["num"] += 1
+                    self.info["downloaded"]["bad"]["arr"].append(value)
+            else:
+                print("Ахтунг!!!!")
         elif type[0] == "conv":
             if type[1] == "time":
                 if is_correct:
@@ -95,6 +108,18 @@ class DataLogger():
                 else:
                     self.conv["time"]["full"].append(self.conv["time"]["full"][-1])
                     self.conv["time"]["new"].append("-")
+            elif type[1] == "file":
+                if is_correct:
+                    self.info["unzipped"]["good"]["num"] += 1
+                    self.info["unzipped"]["good"]["arr"].append(value)
+                else:
+                    config.bad_zipped += 1
+                    self.info["unzipped"]["bad"]["num"] += 1
+                    self.info["unzipped"]["bad"]["arr"].append(value)
+            else:
+                print("Ахтунг!!!!")
+        else:
+            print("Ахтунг!!!!")
         self.save()
 
     def get_plot_time(self):
@@ -110,3 +135,5 @@ class DataLogger():
         label3 = "Количество обработанных песен: " + str(len(self.conv["time"]["full"]))
         label4 = "Количество полученных пар: " + str(len(os.listdir("../Data/Converted")))
         return down, conv, all, label1, label2, label3, label4
+
+

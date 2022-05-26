@@ -28,7 +28,7 @@ class PlotFrame(tk.Frame):
 
         self.toolbarFrame = tk.Frame(master=self)
         self.toolbarFrame.grid(row=1, columnspan=2, sticky="w")
-        #self.toolbar1 = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
+        self.toolbar1 = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
 
     def replot(self):
         self.a.clear()

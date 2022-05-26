@@ -89,9 +89,7 @@ def single_download(url, frame, logger, i=0, length=0):
             file = open("../Data/InfoFiles/downloaded.txt", "a")
             file.write(url + "\n")
             file.close()
-            logger.info["downloaded"]["good"]["num"]+=1
-            logger.info["downloaded"]["good"]["arr"].append(url)
-            logger.save()
+            logger.add(["down", "file"], url, True)
             config.downloaded.append(url)
             fprint("Correct download: " + url)
             return True
@@ -103,14 +101,10 @@ def single_download(url, frame, logger, i=0, length=0):
             fprint("---p")
             fprint("Error: " + str(e))
             fprint("---p")
-            # print(os.listdir("../Data/InfoFiles/"))
             file = open("../Data/InfoFiles/bad_dl.txt", "a")
             file.write(url + "\n")
             file.close()
-            logger.info["downloaded"]["bad"]["num"] += 1
-            logger.info["downloaded"]["bad"]["arr"].append(url)
-            config.bad_dl.append(url)
-            config.bad_downloaded += 1
+            logger.add(["down", "file"], url, False)
             frame.bad_d_lbl["text"] = "Количество плохих загрузок: " + str(config.bad_downloaded)
             return False
     else:
